@@ -316,6 +316,17 @@ body.site-SKY { --accent: #16a34a; }
 // ─── CONFIG — paste your deployed Apps Script URL here ───────────────────────
 const APPS_SCRIPT_URL = "https://script.google.com/a/macros/homechef.com/s/AKfycbz9Tcwvn8lZm4BdCj4lVoyj9JepZYAYx6hfxCzB5p2mQ4jIVDc-Ok-hwYF0qbEd9Vw/exec";
 
+const PLANNER_BASE_URLS = {
+  BP:  "https://docs.google.com/spreadsheets/d/1q2DSqATa8jRuszsnwAMzw2a4O4DagRUVqOwh7qLXIyk/edit",
+  SB:  "https://docs.google.com/spreadsheets/d/17EZHbEhFYUvwmlGXvk9BXSgWBJVGPnsuWFkMQDifTM0/edit",
+  SKY: "https://docs.google.com/spreadsheets/d/1CtkXL6eIpvoE-fhubZayr_WtbAGTEQ_NQghQTYkMhzI/edit",
+};
+
+function updatePlannerButtons(site, mapUrl, cookUrl) {
+  document.getElementById('mapBtn').href  = mapUrl  || PLANNER_BASE_URLS[site];
+  document.getElementById('cookBtn').href = cookUrl || PLANNER_BASE_URLS[site];
+}
+
 // ─── INGREDIENT CACHE ────────────────────────────────────────────────────────
 let ingredientCache = {}; // { BP: [{name, ingId}], SB: [...], SKY: [...] }
 let cacheLoading    = {}; // track in-flight requests per site
@@ -363,6 +374,7 @@ function selectSite(s) {
   document.querySelectorAll('.site-pill').forEach(p => p.classList.toggle('active', p.dataset.site === s));
   document.body.className = 'site-' + s;
   loadIngredients(s);
+  updatePlannerButtons(s);
 
   // Reset everything on site switch
   clearCI();
@@ -523,9 +535,8 @@ function renderResults(data) {
   document.getElementById('statBad').textContent    = summary.notViable;
   document.getElementById('summaryBar').classList.add('visible');
 
-  // MAP Plan + Cook Plan buttons — update URLs from response
-  if (data.mapPlanUrl) document.getElementById('mapBtn').href = data.mapPlanUrl;
-  if (data.cookPlanUrl) document.getElementById('cookBtn').href = data.cookPlanUrl;
+  // MAP Plan + Cook Plan buttons — update with real tab URLs from response
+  updatePlannerButtons(currentSite, data.mapPlanUrl, data.cookPlanUrl);
 
   if (!results.length) {
     document.getElementById('results').innerHTML = `
@@ -604,6 +615,7 @@ function cardHTML(m, today) {
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 buildDayPills();
+updatePlannerButtons('BP');
 </script>
 </body>
 </html>
