@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RTI Tool</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue:       #2563eb;
+  --blue-light: #eff6ff;
+  --blue-mid:   #dbeafe;
+  --green:      #16a34a;
+  --green-light:#f0fdf4;
+  --green-mid:  #dcfce7;
+  --amber:      #d97706;
+  --amber-mid:  #fef3c7;
+  --red:        #dc2626;
+  --red-light:  #fef2f2;
+  --red-mid:    #fee2e2;
+  --g100: #f3f4f6;
+  --g200: #e5e7eb;
+  --g300: #d1d5db;
+  --g400: #9ca3af;
+  --g500: #6b7280;
+  --g600: #4b5563;
+  --g700: #374151;
+  --g900: #111827;
+  --white: #ffffff;
+  --accent: #2563eb;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--g100);
+  color: var(--g900);
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 200;
+  background: var(--white);
+  border-bottom: 1px solid var(--g200);
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px;
+}
+.brand { font-weight: 800; font-size: 15px; letter-spacing: -.3px; }
+.brand span { color: var(--accent); }
+.site-pills { display: flex; gap: 5px; }
+.site-pill {
+  padding: 5px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;
+  border: 1.5px solid var(--g200); background: var(--white); color: var(--g500);
+  cursor: pointer; transition: all .12s; letter-spacing: .3px;
+}
+.site-pill:hover { border-color: var(--accent); color: var(--accent); }
+.site-pill.active { background: var(--accent); border-color: var(--accent); color: var(--white); }
+body.site-BP  { --accent: #2563eb; }
+body.site-SB  { --accent: #dc2626; }
+body.site-SKY { --accent: #16a34a; }
+
+/* ── PAGE ── */
+.page { max-width: 640px; margin: 0 auto; padding: 28px 20px 60px; }
+
+/* ── INPUT BLOCK ── */
+.input-block {
+  background: var(--white); border: 1px solid var(--g200);
+  border-radius: 12px; padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.05);
+  margin-bottom: 20px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.field-label {
+  display: block; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px;
+  color: var(--g500); margin-bottom: 6px;
+}
+
+/* Autocomplete */
+.search-wrap { position: relative; }
+.search-input {
+  width: 100%; height: 42px; padding: 0 36px 0 14px;
+  border: 1.5px solid var(--g300); border-radius: 8px;
+  font-size: 14px; color: var(--g900); outline: none;
+  transition: border-color .12s;
+}
+.search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.search-clear {
+  position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--g400); cursor: pointer;
+  font-size: 15px; display: none; line-height: 1;
+}
+.search-clear.visible { display: block; }
+.dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 300;
+  background: var(--white); border: 1.5px solid var(--g200);
+  border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  max-height: 210px; overflow-y: auto; display: none;
+}
+.dropdown.open { display: block; }
+.dd-item {
+  padding: 10px 14px; cursor: pointer; font-size: 13px; color: var(--g700);
+  border-bottom: 1px solid var(--g100); transition: background .08s;
+}
+.dd-item:last-child { border-bottom: none; }
+.dd-item:hover, .dd-item.focused { background: var(--blue-light); color: var(--blue); }
+.dd-item mark { background: none; color: var(--accent); font-weight: 700; }
+.dd-empty { padding: 12px 14px; font-size: 13px; color: var(--g400); }
+
+/* Selected chip */
+.ci-chip {
+  display: none; align-items: center; gap: 8px;
+  background: #f5f5f5; border: 1px solid var(--g300);
+  border-radius: 8px; padding: 8px 12px; margin-top: 6px;
+}
+.ci-chip.visible { display: flex; }
+.ci-chip-name { font-size: 13px; font-weight: 600; color: var(--g700); flex: 1; }
+.ci-chip-x {
+  background: none; border: none; color: var(--g400);
+  cursor: pointer; font-size: 15px; opacity: .7; line-height: 1;
+}
+.ci-chip-x:hover { opacity: 1; color: var(--g700); }
+
+/* Day pills */
+.day-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.day-pill {
+  padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  border: 1.5px solid var(--g200); background: var(--white); color: var(--g600);
+  cursor: pointer; transition: all .12s; text-align: center;
+}
+.day-pill:hover { border-color: var(--accent); color: var(--accent); }
+.day-pill.active { background: var(--accent); border-color: var(--accent); color: var(--white); }
+.day-pill .pill-day  { font-size: 11px; font-weight: 700; opacity: .75; display: block; }
+.day-pill .pill-date { font-size: 13px; font-weight: 700; display: block; }
+
+/* Run button */
+.btn-run {
+  width: 100%; height: 44px;
+  background: var(--accent); color: var(--white);
+  border: none; border-radius: 8px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: opacity .12s;
+}
+.btn-run:hover { opacity: .88; }
+
+/* ── SUMMARY BAR ── */
+.summary-bar { display: none; gap: 8px; margin-bottom: 16px; }
+.summary-bar.visible { display: flex; }
+.stat {
+  flex: 1; background: var(--white); border: 1px solid var(--g200);
+  border-radius: 10px; padding: 12px 14px; text-align: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.stat-num { font-size: 24px; font-weight: 800; line-height: 1; margin-bottom: 2px; }
+.stat-lbl { font-size: 11px; font-weight: 600; color: var(--g500); text-transform: uppercase; letter-spacing: .4px; }
+.stat.s-green .stat-num { color: #0891b2; }
+.stat.s-blue  .stat-num { color: #7c3aed; }
+.stat.s-red   .stat-num { color: #d97706; }
+
+/* ── MAP PLAN BUTTON ── */
+.map-btn-wrap { display: none; margin-bottom: 12px; }
+.map-btn-wrap.visible { display: block; }
+.map-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; height: 40px;
+  background: var(--white); border: 1.5px solid var(--g200);
+  border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--g600);
+  text-decoration: none; transition: all .12s;
+}
+.map-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── SECTION LABEL ── */
+.section-lbl {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .6px; color: var(--g400); margin: 16px 0 8px 2px;
+}
+.section-lbl.lbl-premap   { color: #0891b2; }
+.section-lbl.lbl-decanted { color: #7c3aed; }
+.section-lbl.lbl-bad      { color: #d97706; }
+.cards-premap   .card { border-left: 3px solid #0891b2; }
+.cards-decanted .card { border-left: 3px solid #7c3aed; }
+.cards-bad      .card { border-left: 3px solid #d97706; }
+
+/* ── CARDS ── */
+.cards { display: flex; flex-direction: column; gap: 6px; }
+.card {
+  background: var(--white); border: 1px solid var(--g200);
+  border-radius: 10px; padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  display: flex; align-items: center; gap: 12px;
+  transition: box-shadow .12s;
+}
+.card:hover { box-shadow: 0 3px 10px rgba(0,0,0,.08); }
+.card.card-bad { background: var(--red-light); border-color: #fca5a5; opacity: .8; }
+
+.card-rank {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 12px;
+  background: var(--g100); color: var(--g500);
+}
+.card-rank.bad { background: var(--red-mid); color: var(--red); }
+
+.today-tag {
+  display: inline-block; margin-top: 3px;
+  font-size: 11px; font-weight: 700; color: #0891b2; letter-spacing: .2px;
+}
+
+.card-body { flex: 1; min-width: 0; }
+.card-name {
+  font-size: 14px; font-weight: 700; color: var(--g900);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+.card-name .t-num { color: var(--g400); font-weight: 600; margin-right: 5px; }
+.card-right { flex-shrink: 0; text-align: right; }
+.card-cook-date { font-size: 13px; font-weight: 700; color: var(--g700); }
+
+/* ── LOADING / ERROR / PLACEHOLDER ── */
+.placeholder, .loading-state, .error-state {
+  text-align: center; padding: 52px 20px;
+  background: var(--white); border: 1px solid var(--g200);
+  border-radius: 12px;
+}
+.ph-icon  { font-size: 30px; margin-bottom: 10px; }
+.ph-title { font-size: 15px; font-weight: 700; color: var(--g500); margin-bottom: 4px; }
+.ph-sub   { font-size: 13px; color: var(--g400); }
+.loading-state .ph-title { color: var(--g400); }
+.error-state .ph-title { color: var(--red); }
+</style>
+</head>
+<body class="site-BP">
+
+<div class="topbar">
+  <div class="brand">RTI <span>Tool</span></div>
+  <div class="site-pills">
+    <button class="site-pill active" data-site="BP"  onclick="selectSite('BP')">BP</button>
+    <button class="site-pill"        data-site="SB"  onclick="selectSite('SB')">SB</button>
+    <button class="site-pill"        data-site="SKY" onclick="selectSite('SKY')">SKY</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="input-block">
+    <div>
+      <label class="field-label">Ingredient Name</label>
+      <div class="search-wrap">
+        <input id="ciInput" class="search-input" type="text"
+               placeholder="Search ingredient…" autocomplete="off"
+               oninput="onCiInput()" onkeydown="onCiKeydown(event)" />
+        <button class="search-clear" id="clearBtn" onclick="clearCI()">✕</button>
+        <div class="dropdown" id="dropdown"></div>
+      </div>
+      <div class="ci-chip" id="ciChip">
+        <span class="ci-chip-name" id="ciChipName"></span>
+        <button class="ci-chip-x" onclick="clearCI()">✕</button>
+      </div>
+    </div>
+
+    <div>
+      <label class="field-label">CI Expires</label>
+      <div class="day-pills" id="dayPills"></div>
+    </div>
+
+    <button class="btn-run" onclick="runCheck()">Find Options →</button>
+  </div>
+
+  <div class="summary-bar" id="summaryBar">
+    <div class="stat s-green">
+      <div class="stat-num" id="statCook">—</div>
+      <div class="stat-lbl">Save a Cook</div>
+    </div>
+    <div class="stat s-blue">
+      <div class="stat-num" id="statViable">—</div>
+      <div class="stat-lbl">FIFO Only</div>
+    </div>
+    <div class="stat s-red">
+      <div class="stat-num" id="statBad">—</div>
+      <div class="stat-lbl">Too Late</div>
+    </div>
+  </div>
+
+  <div class="map-btn-wrap" id="mapBtnWrap">
+    <a class="map-btn" id="mapBtn" href="#" target="mapplan">
+      📋 Verify timing in MAP Plan
+    </a>
+  </div>
+
+  <div id="results">
+    <div class="placeholder">
+      <div class="ph-icon">🔍</div>
+      <div class="ph-title">Search for an ingredient</div>
+      <div class="ph-sub">Select a site, enter a CI name, pick an expiration date, and hit Find Options.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── CONFIG — paste your deployed Apps Script URL here ───────────────────────
+const APPS_SCRIPT_URL = "https://script.google.com/a/macros/homechef.com/s/AKfycbz9Tcwvn8lZm4BdCj4lVoyj9JepZYAYx6hfxCzB5p2mQ4jIVDc-Ok-hwYF0qbEd9Vw/exec";
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let currentSite = 'BP';
+let selectedCI  = null;
+let selectedExp = null;
+let ddFocusIdx  = -1;
+let ddMatches   = []; // populated from live search results
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function daysFromNow(n) { const d = new Date(); d.setDate(d.getDate() + n); return d; }
+function fmtShort(d) {
+  if (typeof d === 'string') d = new Date(d + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+// ─── SITE ────────────────────────────────────────────────────────────────────
+function selectSite(s) {
+  currentSite = s;
+  document.querySelectorAll('.site-pill').forEach(p => p.classList.toggle('active', p.dataset.site === s));
+  document.body.className = 'site-' + s;
+  if (selectedCI && selectedExp) runCheck();
+}
+
+// ─── DAY PILLS ───────────────────────────────────────────────────────────────
+function buildDayPills() {
+  const wrap = document.getElementById('dayPills');
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  wrap.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const d   = daysFromNow(i);
+    const btn = document.createElement('button');
+    btn.className    = 'day-pill';
+    btn.dataset.date = d.toISOString().split('T')[0];
+    btn.innerHTML    = `<span class="pill-day">${days[d.getDay()]}</span><span class="pill-date">${fmtShort(d)}</span>`;
+    btn.onclick      = () => selectDay(btn, d);
+    wrap.appendChild(btn);
+  }
+}
+
+function selectDay(btn, date) {
+  document.querySelectorAll('.day-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  selectedExp = date;
+}
+
+// ─── AUTOCOMPLETE ─────────────────────────────────────────────────────────────
+// Fetches ingredient name suggestions from Apps Script as user types
+let ddSearchTimer = null;
+
+function onCiInput() {
+  const val = document.getElementById('ciInput').value.trim();
+  document.getElementById('clearBtn').classList.toggle('visible', val.length > 0);
+  selectedCI = null;
+  document.getElementById('ciChip').classList.remove('visible');
+  if (val.length < 2) { closeDD(); return; }
+
+  // Debounce — wait 300ms after typing stops before fetching
+  clearTimeout(ddSearchTimer);
+  ddSearchTimer = setTimeout(() => fetchSuggestions(val), 300);
+}
+
+async function fetchSuggestions(query) {
+  // Call Apps Script to get ingredient name suggestions from Cook Plan
+  const url = `${APPS_SCRIPT_URL}?action=suggest&site=${currentSite}&q=${encodeURIComponent(query)}`;
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    ddMatches  = data.suggestions || [];
+    renderDD(ddMatches, query);
+  } catch (err) {
+    // Fallback: show no results if fetch fails
+    ddMatches = [];
+    renderDD([], query);
+  }
+}
+
+function renderDD(matches, query) {
+  const dd = document.getElementById('dropdown');
+  if (!matches.length) {
+    dd.innerHTML = `<div class="dd-empty">No matching ingredients found</div>`;
+  } else {
+    dd.innerHTML = matches.map((m, i) => {
+      const hi = m.replace(new RegExp(`(${escRe(query)})`, 'gi'), '<mark>$1</mark>');
+      return `<div class="dd-item" data-idx="${i}" onmousedown="pickCI('${m.replace(/'/g,"\\'")}')">${hi}</div>`;
+    }).join('');
+  }
+  dd.classList.add('open');
+  ddFocusIdx = -1;
+}
+
+function closeDD() {
+  const dd = document.getElementById('dropdown');
+  dd.classList.remove('open');
+  dd.innerHTML = '';
+  ddFocusIdx = -1;
+}
+
+function pickCI(name) {
+  selectedCI = name;
+  document.getElementById('ciInput').value = '';
+  document.getElementById('clearBtn').classList.remove('visible');
+  document.getElementById('ciChipName').textContent = name;
+  document.getElementById('ciChip').classList.add('visible');
+  closeDD();
+}
+
+function clearCI() {
+  selectedCI = null;
+  document.getElementById('ciInput').value = '';
+  document.getElementById('clearBtn').classList.remove('visible');
+  document.getElementById('ciChip').classList.remove('visible');
+  closeDD();
+  document.getElementById('ciInput').focus();
+}
+
+function onCiKeydown(e) {
+  const dd    = document.getElementById('dropdown');
+  const items = dd.querySelectorAll('.dd-item');
+  if (!dd.classList.contains('open') || !items.length) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); ddFocusIdx = Math.min(ddFocusIdx+1, items.length-1); updFocus(items); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); ddFocusIdx = Math.max(ddFocusIdx-1, 0); updFocus(items); }
+  else if (e.key === 'Enter' && ddFocusIdx >= 0) { e.preventDefault(); items[ddFocusIdx].dispatchEvent(new MouseEvent('mousedown')); }
+  else if (e.key === 'Escape') closeDD();
+}
+function updFocus(items) { items.forEach((el,i) => el.classList.toggle('focused', i === ddFocusIdx)); }
+document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) closeDD(); });
+
+// ─── RUN CHECK ───────────────────────────────────────────────────────────────
+async function runCheck() {
+  if (!selectedCI)  { document.getElementById('ciInput').focus(); return; }
+  if (!selectedExp) { return; }
+
+  const expDate = selectedExp.toISOString().split('T')[0];
+
+  // Show loading state
+  document.getElementById('results').innerHTML = `
+    <div class="loading-state">
+      <div class="ph-icon">⏳</div>
+      <div class="ph-title">Looking up Cook Plan…</div>
+      <div class="ph-sub">Checking ${currentSite} for "${selectedCI}"</div>
+    </div>`;
+  document.getElementById('summaryBar').classList.remove('visible');
+  document.getElementById('mapBtnWrap').classList.remove('visible');
+
+  try {
+    const url  = `${APPS_SCRIPT_URL}?site=${encodeURIComponent(currentSite)}&ingName=${encodeURIComponent(selectedCI)}&expDate=${expDate}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    if (data.error) {
+      showError(data.error);
+      return;
+    }
+
+    renderResults(data);
+  } catch (err) {
+    showError("Could not reach the RTI Tool server. Check your connection and try again.");
+  }
+}
+
+function showError(msg) {
+  document.getElementById('results').innerHTML = `
+    <div class="error-state">
+      <div class="ph-icon">⚠️</div>
+      <div class="ph-title">Something went wrong</div>
+      <div class="ph-sub">${msg}</div>
+    </div>`;
+}
+
+function renderResults(data) {
+  const results   = data.results || [];
+  const summary   = data.summary || { premap: 0, decanted: 0, notViable: 0 };
+  const today     = new Date(); today.setHours(0,0,0,0);
+
+  // Summary bar
+  document.getElementById('statCook').textContent   = summary.premap;
+  document.getElementById('statViable').textContent = summary.decanted;
+  document.getElementById('statBad').textContent    = summary.notViable;
+  document.getElementById('summaryBar').classList.add('visible');
+
+  // MAP Plan button
+  if (data.mapPlanUrl) {
+    document.getElementById('mapBtn').href = data.mapPlanUrl;
+    document.getElementById('mapBtnWrap').classList.add('visible');
+  }
+
+  if (!results.length) {
+    document.getElementById('results').innerHTML = `
+      <div class="placeholder">
+        <div class="ph-icon">🤷</div>
+        <div class="ph-title">No results found</div>
+        <div class="ph-sub">"${data.ingName}" wasn't found in the ${data.site} Cook Plan for this week.</div>
+      </div>`;
+    return;
+  }
+
+  const premap    = results.filter(r => r.resultType === 'premap');
+  const decanted  = results.filter(r => r.resultType === 'decanted');
+  const notViable = results.filter(r => r.resultType === 'not_viable');
+
+  let html = '';
+
+  if (premap.length) {
+    html += `<div class="section-lbl lbl-premap">Not Cooked Yet (saves a cook)</div><div class="cards cards-premap">`;
+    premap.forEach(m => html += cardHTML(m, today));
+    html += `</div>`;
+  }
+  if (decanted.length) {
+    html += `<div class="section-lbl lbl-decanted">Already Cooked (FIFO Only)</div><div class="cards cards-decanted">`;
+    decanted.forEach(m => html += cardHTML(m, today));
+    html += `</div>`;
+  }
+  if (notViable.length) {
+    html += `<div class="section-lbl lbl-bad">Not Viable</div><div class="cards cards-bad">`;
+    notViable.forEach(m => html += cardHTML(m, today));
+    html += `</div>`;
+  }
+
+  document.getElementById('results').innerHTML = html;
+}
+
+function cardHTML(m, today) {
+  const cookDate     = new Date(m.cookDate + 'T00:00:00');
+  const cookingToday = cookDate.toDateString() === today.toDateString();
+  const badCard      = m.resultType === 'not_viable';
+  const rankEl       = m.rank
+    ? `<div class="card-rank">${m.rank}</div>`
+    : `<div class="card-rank bad">✕</div>`;
+  const todayTag     = cookingToday ? `<span class="today-tag">Cooking today</span>` : '';
+  const mealLabel    = m.mealLetter ? `${m.mealLetter} - ${m.mealId}` : m.mealId;
+
+  return `
+    <div class="card${badCard ? ' card-bad' : ''}">
+      ${rankEl}
+      <div class="card-body">
+        <div class="card-name"><span class="t-num">${mealLabel}</span>${m.mealName !== m.mealId ? m.mealName : ''}</div>
+        ${todayTag}
+      </div>
+      <div class="card-right">
+        <div class="card-cook-date">${cookingToday ? 'Today' : 'Cooks ' + fmtShort(m.cookDate)}</div>
+      </div>
+    </div>`;
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+buildDayPills();
+</script>
+</body>
+</html>
