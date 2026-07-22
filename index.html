@@ -162,18 +162,17 @@ body.site-SKY { --accent: #16a34a; }
 .stat.s-red   .stat-num { color: #d97706; }
 
 /* ── MAP / COOK PLAN BUTTONS ── */
-.map-btn-wrap { display: none; margin-bottom: 12px; gap: 8px; }
-.map-btn-wrap.visible { display: flex; }
+.map-btn-wrap { display: flex; margin-bottom: 12px; gap: 8px; }
 .map-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   flex: 1; height: 40px;
-  background: var(--g700); color: var(--white);
+  background: #374151; color: var(--white);
   border: none; border-radius: 8px;
   font-size: 13px; font-weight: 700;
   text-decoration: none; transition: opacity .12s; cursor: pointer;
 }
-.map-btn:hover { opacity: .85; }
-.cook-btn { background: #0891b2; }
+.map-btn:hover { opacity: .82; }
+.cook-btn { background: #1e3a5f; }
 
 /* ── SECTION LABEL ── */
 .section-lbl {
@@ -295,11 +294,11 @@ body.site-SKY { --accent: #16a34a; }
   </div>
 
   <div class="map-btn-wrap" id="mapBtnWrap">
-    <a class="map-btn" id="mapBtn" href="#" target="mapplan">
-      🗓 MAP Plan
+    <a class="map-btn" id="mapBtn" href="#" target="planner">
+      📍 MAP Plan
     </a>
-    <a class="map-btn cook-btn" id="cookBtn" href="#" target="cookplan">
-      📋 Cook Plan
+    <a class="map-btn cook-btn" id="cookBtn" href="#" target="planner">
+      🔥 Cook Plan
     </a>
   </div>
 
@@ -363,8 +362,19 @@ function selectSite(s) {
   currentSite = s;
   document.querySelectorAll('.site-pill').forEach(p => p.classList.toggle('active', p.dataset.site === s));
   document.body.className = 'site-' + s;
-  loadIngredients(s); // preload for this site
-  if (selectedCI && selectedExp) runCheck();
+  loadIngredients(s);
+
+  // Reset everything on site switch
+  clearCI();
+  selectedExp = null;
+  document.querySelectorAll('.day-pill').forEach(p => p.classList.remove('active'));
+  document.getElementById('summaryBar').classList.remove('visible');
+  document.getElementById('results').innerHTML = `
+    <div class="placeholder">
+      <div class="ph-icon">🔍</div>
+      <div class="ph-title">Search for an ingredient</div>
+      <div class="ph-sub">Select a site, enter a CI name, pick an expiration date, and hit Find Options.</div>
+    </div>`;
 }
 
 // ─── DAY PILLS ───────────────────────────────────────────────────────────────
@@ -513,15 +523,9 @@ function renderResults(data) {
   document.getElementById('statBad').textContent    = summary.notViable;
   document.getElementById('summaryBar').classList.add('visible');
 
-  // MAP Plan button
-  if (data.mapPlanUrl) {
-    document.getElementById('mapBtn').href = data.mapPlanUrl;
-  }
-  // Cook Plan button — uses correct week tab gid from Apps Script
-  if (data.cookPlanUrl) {
-    document.getElementById('cookBtn').href = data.cookPlanUrl;
-  }
-  document.getElementById('mapBtnWrap').classList.add('visible');
+  // MAP Plan + Cook Plan buttons — update URLs from response
+  if (data.mapPlanUrl) document.getElementById('mapBtn').href = data.mapPlanUrl;
+  if (data.cookPlanUrl) document.getElementById('cookBtn').href = data.cookPlanUrl;
 
   if (!results.length) {
     document.getElementById('results').innerHTML = `
