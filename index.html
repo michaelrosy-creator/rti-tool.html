@@ -327,6 +327,16 @@ function updatePlannerButtons(site, mapUrl, cookUrl) {
   document.getElementById('cookBtn').href = cookUrl || PLANNER_BASE_URLS[site];
 }
 
+async function fetchPlannerUrls(site) {
+  try {
+    const res  = await fetch(`${APPS_SCRIPT_URL}?action=getUrls&site=${site}`);
+    const data = await res.json();
+    updatePlannerButtons(site, data.mapPlanUrl, data.cookPlanUrl);
+  } catch(err) {
+    // fallback to base URL already set — no action needed
+  }
+}
+
 // ─── INGREDIENT CACHE ────────────────────────────────────────────────────────
 let ingredientCache = {}; // { BP: [{name, ingId}], SB: [...], SKY: [...] }
 let cacheLoading    = {}; // track in-flight requests per site
@@ -345,9 +355,6 @@ async function loadIngredients(site) {
   }
   cacheLoading[site] = false;
 }
-
-// Preload BP on page load, then load others lazily when site is selected
-loadIngredients('BP');
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let currentSite = 'BP';
@@ -374,7 +381,8 @@ function selectSite(s) {
   document.querySelectorAll('.site-pill').forEach(p => p.classList.toggle('active', p.dataset.site === s));
   document.body.className = 'site-' + s;
   loadIngredients(s);
-  updatePlannerButtons(s);
+  updatePlannerButtons(s); // set base URL immediately
+  fetchPlannerUrls(s);     // then fetch correct tab URLs in background
 
   // Reset everything on site switch
   clearCI();
@@ -615,7 +623,9 @@ function cardHTML(m, today) {
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 buildDayPills();
-updatePlannerButtons('BP');
+updatePlannerButtons('BP'); // set base URL immediately
+fetchPlannerUrls('BP');     // fetch correct tab URLs in background
+loadIngredients('BP');
 </script>
 </body>
 </html>
