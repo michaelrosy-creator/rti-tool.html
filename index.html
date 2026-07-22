@@ -173,7 +173,7 @@ body.site-SKY { --accent: #16a34a; }
   text-decoration: none; transition: opacity .12s; cursor: pointer;
 }
 .map-btn:hover { opacity: .85; }
-.cook-btn { background: var(--g500); }
+.cook-btn { background: #0891b2; }
 
 /* ── SECTION LABEL ── */
 .section-lbl {
@@ -316,12 +316,6 @@ body.site-SKY { --accent: #16a34a; }
 <script>
 // ─── CONFIG — paste your deployed Apps Script URL here ───────────────────────
 const APPS_SCRIPT_URL = "https://script.google.com/a/macros/homechef.com/s/AKfycbz9Tcwvn8lZm4BdCj4lVoyj9JepZYAYx6hfxCzB5p2mQ4jIVDc-Ok-hwYF0qbEd9Vw/exec";
-
-const COOK_PLAN_URLS = {
-  BP:  "https://docs.google.com/spreadsheets/d/1q2DSqATa8jRuszsnwAMzw2a4O4DagRUVqOwh7qLXIyk/edit",
-  SB:  "https://docs.google.com/spreadsheets/d/17EZHbEhFYUvwmlGXvk9BXSgWBJVGPnsuWFkMQDifTM0/edit",
-  SKY: "https://docs.google.com/spreadsheets/d/1CtkXL6eIpvoE-fhubZayr_WtbAGTEQ_NQghQTYkMhzI/edit",
-};
 
 // ─── INGREDIENT CACHE ────────────────────────────────────────────────────────
 let ingredientCache = {}; // { BP: [{name, ingId}], SB: [...], SKY: [...] }
@@ -523,8 +517,10 @@ function renderResults(data) {
   if (data.mapPlanUrl) {
     document.getElementById('mapBtn').href = data.mapPlanUrl;
   }
-  // Cook Plan button — always link to this site's Cook Plan
-  document.getElementById('cookBtn').href = COOK_PLAN_URLS[currentSite] || '#';
+  // Cook Plan button — uses correct week tab gid from Apps Script
+  if (data.cookPlanUrl) {
+    document.getElementById('cookBtn').href = data.cookPlanUrl;
+  }
   document.getElementById('mapBtnWrap').classList.add('visible');
 
   if (!results.length) {
