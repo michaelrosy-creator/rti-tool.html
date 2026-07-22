@@ -167,11 +167,12 @@ body.site-SKY { --accent: #16a34a; }
 .map-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   width: 100%; height: 40px;
-  background: var(--white); border: 1.5px solid var(--g200);
-  border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--g600);
-  text-decoration: none; transition: all .12s;
+  background: var(--g700); color: var(--white);
+  border: none; border-radius: 8px;
+  font-size: 13px; font-weight: 700;
+  text-decoration: none; transition: opacity .12s; cursor: pointer;
 }
-.map-btn:hover { border-color: var(--accent); color: var(--accent); }
+.map-btn:hover { opacity: .85; }
 
 /* ── SECTION LABEL ── */
 .section-lbl {
@@ -210,7 +211,7 @@ body.site-SKY { --accent: #16a34a; }
   font-size: 11px; font-weight: 700; color: #0891b2; letter-spacing: .2px;
 }
 .map-warning {
-  display: block; margin-top: 3px;
+  display: block; margin-top: 2px; text-align: right;
   font-size: 11px; font-weight: 700; color: #d97706; letter-spacing: .2px;
 }
 .status-note {
@@ -294,7 +295,7 @@ body.site-SKY { --accent: #16a34a; }
 
   <div class="map-btn-wrap" id="mapBtnWrap">
     <a class="map-btn" id="mapBtn" href="#" target="mapplan">
-      📋 Verify timing in MAP Plan
+      🗓 Open MAP Plan
     </a>
   </div>
 
@@ -536,6 +537,8 @@ function renderResults(data) {
     html += `</div>`;
   }
   if (decanted.length) {
+    // Re-rank decanted independently 1, 2, 3...
+    decanted.forEach((m, i) => m.rank = i + 1);
     html += `<div class="section-lbl lbl-decanted">Already Cooked (FIFO Only)</div><div class="cards cards-decanted">`;
     decanted.forEach(m => html += cardHTML(m, today));
     html += `</div>`;
@@ -562,9 +565,9 @@ function cardHTML(m, today) {
   const todayTag = (cookingToday && !isDecanted)
     ? `<span class="today-tag">Cooking today (check with chef)</span>` : '';
 
-  // Buffer = 0 means CI expires same day as MAP — warn supervisor
-  const mapWarning = (m.viable && m.buffer === 0)
-    ? `<span class="map-warning">Expires day of MAP — note on MAP plan to use first</span>` : '';
+  // Buffer = 0 warning — only for premap meals
+  const mapWarning = (!isDecanted && m.viable && m.buffer === 0)
+    ? `<span class="map-warning">Note on MAP plan</span>` : '';
 
   // Status note for past dates still showing cooking/chilling
   const noteTag = m.statusNote
@@ -578,10 +581,11 @@ function cardHTML(m, today) {
       ${rankEl}
       <div class="card-body">
         <div class="card-name">${mealLabel}</div>
-        ${todayTag}${mapWarning}${noteTag}
+        ${todayTag}${noteTag}
       </div>
       <div class="card-right">
         <div class="card-cook-date">${cookDateStr}</div>
+        ${mapWarning}
       </div>
     </div>`;
 }
