@@ -403,10 +403,12 @@ function closeDD() {
 }
 
 function pickCI(name) {
-  selectedCI = name;
+  // Strip "(ID: XXXXX)" suffix if present — added by suggest for ID searches
+  const cleanName = name.replace(/\s*\(ID:.*?\)\s*$/, '').trim();
+  selectedCI = cleanName;
   document.getElementById('ciInput').value = '';
   document.getElementById('clearBtn').classList.remove('visible');
-  document.getElementById('ciChipName').textContent = name;
+  document.getElementById('ciChipName').textContent = cleanName;
   document.getElementById('ciChip').classList.add('visible');
   closeDD();
 }
