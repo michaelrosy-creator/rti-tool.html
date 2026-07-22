@@ -308,12 +308,33 @@ body.site-SKY { --accent: #16a34a; }
 // ─── CONFIG — paste your deployed Apps Script URL here ───────────────────────
 const APPS_SCRIPT_URL = "https://script.google.com/a/macros/homechef.com/s/AKfycbz9Tcwvn8lZm4BdCj4lVoyj9JepZYAYx6hfxCzB5p2mQ4jIVDc-Ok-hwYF0qbEd9Vw/exec";
 
+// ─── INGREDIENT CACHE ────────────────────────────────────────────────────────
+let ingredientCache = {}; // { BP: [{name, ingId}], SB: [...], SKY: [...] }
+let cacheLoading    = {}; // track in-flight requests per site
+
+async function loadIngredients(site) {
+  if (ingredientCache[site]) return; // already loaded
+  if (cacheLoading[site])    return; // already loading
+  cacheLoading[site] = true;
+  try {
+    const url  = `${APPS_SCRIPT_URL}?action=getAll&site=${site}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    ingredientCache[site] = data.ingredients || [];
+  } catch (err) {
+    ingredientCache[site] = [];
+  }
+  cacheLoading[site] = false;
+}
+
+// Preload BP on page load, then load others lazily when site is selected
+loadIngredients('BP');
+
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let currentSite = 'BP';
 let selectedCI  = null;
 let selectedExp = null;
 let ddFocusIdx  = -1;
-let ddMatches   = []; // populated from live search results
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 function daysFromNow(n) { const d = new Date(); d.setDate(d.getDate() + n); return d; }
@@ -328,6 +349,7 @@ function selectSite(s) {
   currentSite = s;
   document.querySelectorAll('.site-pill').forEach(p => p.classList.toggle('active', p.dataset.site === s));
   document.body.className = 'site-' + s;
+  loadIngredients(s); // preload for this site
   if (selectedCI && selectedExp) runCheck();
 }
 
@@ -354,9 +376,6 @@ function selectDay(btn, date) {
 }
 
 // ─── AUTOCOMPLETE ─────────────────────────────────────────────────────────────
-// Fetches ingredient name suggestions from Apps Script as user types
-let ddSearchTimer = null;
-
 function onCiInput() {
   const val = document.getElementById('ciInput').value.trim();
   document.getElementById('clearBtn').classList.toggle('visible', val.length > 0);
@@ -364,24 +383,14 @@ function onCiInput() {
   document.getElementById('ciChip').classList.remove('visible');
   if (val.length < 2) { closeDD(); return; }
 
-  // Debounce — wait 300ms after typing stops before fetching
-  clearTimeout(ddSearchTimer);
-  ddSearchTimer = setTimeout(() => fetchSuggestions(val), 300);
-}
+  const lower   = val.toLowerCase();
+  const cache   = ingredientCache[currentSite] || [];
+  const matches = cache
+    .filter(i => i.name.toLowerCase().includes(lower) || i.ingId.toLowerCase().includes(lower))
+    .slice(0, 8)
+    .map(i => i.name);
 
-async function fetchSuggestions(query) {
-  // Call Apps Script to get ingredient name suggestions from Cook Plan
-  const url = `${APPS_SCRIPT_URL}?action=suggest&site=${currentSite}&q=${encodeURIComponent(query)}`;
-  try {
-    const res  = await fetch(url);
-    const data = await res.json();
-    ddMatches  = data.suggestions || [];
-    renderDD(ddMatches, query);
-  } catch (err) {
-    // Fallback: show no results if fetch fails
-    ddMatches = [];
-    renderDD([], query);
-  }
+  renderDD(matches, val);
 }
 
 function renderDD(matches, query) {
