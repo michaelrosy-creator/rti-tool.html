@@ -209,6 +209,10 @@ body.site-SKY { --accent: #16a34a; }
   display: inline-block; margin-top: 3px;
   font-size: 11px; font-weight: 700; color: #0891b2; letter-spacing: .2px;
 }
+.map-warning {
+  display: block; margin-top: 3px;
+  font-size: 11px; font-weight: 700; color: #d97706; letter-spacing: .2px;
+}
 .status-note {
   display: inline-block; margin-top: 3px; margin-left: 4px;
   font-size: 11px; font-weight: 600; color: #7c3aed; letter-spacing: .2px;
@@ -341,6 +345,11 @@ function daysFromNow(n) { const d = new Date(); d.setDate(d.getDate() + n); retu
 function fmtShort(d) {
   if (typeof d === 'string') d = new Date(d + 'T00:00:00');
   return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+function fmtCard(d) {
+  if (typeof d === 'string') d = new Date(d + 'T00:00:00');
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return days[d.getDay()] + ' ' + d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
 }
 function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 
@@ -516,7 +525,7 @@ function renderResults(data) {
   }
 
   const premap    = results.filter(r => r.resultType === 'premap');
-  const decanted  = results.filter(r => r.resultType === 'decanted');
+  const decanted  = results.filter(r => r.resultType === 'decanted').sort((a, b) => new Date(b.cookDate) - new Date(a.cookDate));
   const notViable = results.filter(r => r.resultType === 'not_viable');
 
   let html = '';
@@ -549,25 +558,30 @@ function cardHTML(m, today) {
     ? `<div class="card-rank">${m.rank}</div>`
     : `<div class="card-rank bad">✕</div>`;
 
-  // Only show "Cooking today" for premap meals
+  // "Cooking today (check with chef)" — premap only
   const todayTag = (cookingToday && !isDecanted)
-    ? `<span class="today-tag">Cooking today</span>` : '';
+    ? `<span class="today-tag">Cooking today (check with chef)</span>` : '';
+
+  // Buffer = 0 means CI expires same day as MAP — warn supervisor
+  const mapWarning = (m.viable && m.buffer === 0)
+    ? `<span class="map-warning">Expires day of MAP — note on MAP plan to use first</span>` : '';
 
   // Status note for past dates still showing cooking/chilling
   const noteTag = m.statusNote
     ? `<span class="status-note">${m.statusNote}</span>` : '';
 
-  const mealLabel = m.mealLetter ? `${m.mealLetter} - ${m.mealName || m.mealId}` : (m.mealName || m.mealId);
+  const mealLabel   = m.mealLetter ? `${m.mealLetter} - ${m.mealName || m.mealId}` : (m.mealName || m.mealId);
+  const cookDateStr = cookingToday ? 'Today' : 'Cooks ' + fmtCard(cookDate);
 
   return `
     <div class="card${badCard ? ' card-bad' : ''}">
       ${rankEl}
       <div class="card-body">
         <div class="card-name">${mealLabel}</div>
-        ${todayTag}${noteTag}
+        ${todayTag}${mapWarning}${noteTag}
       </div>
       <div class="card-right">
-        <div class="card-cook-date">${cookingToday ? 'Today' : 'Cooks ' + fmtShort(m.cookDate)}</div>
+        <div class="card-cook-date">${cookDateStr}</div>
       </div>
     </div>`;
 }
