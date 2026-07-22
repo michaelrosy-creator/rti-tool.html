@@ -209,6 +209,10 @@ body.site-SKY { --accent: #16a34a; }
   display: inline-block; margin-top: 3px;
   font-size: 11px; font-weight: 700; color: #0891b2; letter-spacing: .2px;
 }
+.status-note {
+  display: inline-block; margin-top: 3px; margin-left: 4px;
+  font-size: 11px; font-weight: 600; color: #7c3aed; letter-spacing: .2px;
+}
 
 .card-body { flex: 1; min-width: 0; }
 .card-name {
@@ -216,7 +220,6 @@ body.site-SKY { --accent: #16a34a; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   margin-bottom: 2px;
 }
-.card-name .t-num { color: var(--g400); font-weight: 600; margin-right: 5px; }
 .card-right { flex-shrink: 0; text-align: right; }
 .card-cook-date { font-size: 13px; font-weight: 700; color: var(--g700); }
 
@@ -532,18 +535,27 @@ function cardHTML(m, today) {
   const cookDate     = new Date(m.cookDate + 'T00:00:00');
   const cookingToday = cookDate.toDateString() === today.toDateString();
   const badCard      = m.resultType === 'not_viable';
+  const isDecanted   = m.resultType === 'decanted';
   const rankEl       = m.rank
     ? `<div class="card-rank">${m.rank}</div>`
     : `<div class="card-rank bad">✕</div>`;
-  const todayTag     = cookingToday ? `<span class="today-tag">Cooking today</span>` : '';
-  const mealLabel    = m.mealLetter ? `${m.mealLetter} - ${m.mealId}` : m.mealId;
+
+  // Only show "Cooking today" for premap meals
+  const todayTag = (cookingToday && !isDecanted)
+    ? `<span class="today-tag">Cooking today</span>` : '';
+
+  // Status note for past dates still showing cooking/chilling
+  const noteTag = m.statusNote
+    ? `<span class="status-note">${m.statusNote}</span>` : '';
+
+  const mealLabel = m.mealLetter ? `${m.mealLetter} - ${m.mealName || m.mealId}` : (m.mealName || m.mealId);
 
   return `
     <div class="card${badCard ? ' card-bad' : ''}">
       ${rankEl}
       <div class="card-body">
-        <div class="card-name"><span class="t-num">${mealLabel}</span>${m.mealName !== m.mealId ? m.mealName : ''}</div>
-        ${todayTag}
+        <div class="card-name">${mealLabel}</div>
+        ${todayTag}${noteTag}
       </div>
       <div class="card-right">
         <div class="card-cook-date">${cookingToday ? 'Today' : 'Cooks ' + fmtShort(m.cookDate)}</div>
