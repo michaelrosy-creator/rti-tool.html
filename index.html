@@ -161,18 +161,19 @@ body.site-SKY { --accent: #16a34a; }
 .stat.s-blue  .stat-num { color: #7c3aed; }
 .stat.s-red   .stat-num { color: #d97706; }
 
-/* ── MAP PLAN BUTTON ── */
-.map-btn-wrap { display: none; margin-bottom: 12px; }
-.map-btn-wrap.visible { display: block; }
+/* ── MAP / COOK PLAN BUTTONS ── */
+.map-btn-wrap { display: none; margin-bottom: 12px; gap: 8px; }
+.map-btn-wrap.visible { display: flex; }
 .map-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; height: 40px;
+  flex: 1; height: 40px;
   background: var(--g700); color: var(--white);
   border: none; border-radius: 8px;
   font-size: 13px; font-weight: 700;
   text-decoration: none; transition: opacity .12s; cursor: pointer;
 }
 .map-btn:hover { opacity: .85; }
+.cook-btn { background: var(--g500); }
 
 /* ── SECTION LABEL ── */
 .section-lbl {
@@ -295,7 +296,10 @@ body.site-SKY { --accent: #16a34a; }
 
   <div class="map-btn-wrap" id="mapBtnWrap">
     <a class="map-btn" id="mapBtn" href="#" target="mapplan">
-      🗓 Open MAP Plan
+      🗓 MAP Plan
+    </a>
+    <a class="map-btn cook-btn" id="cookBtn" href="#" target="cookplan">
+      📋 Cook Plan
     </a>
   </div>
 
@@ -312,6 +316,12 @@ body.site-SKY { --accent: #16a34a; }
 <script>
 // ─── CONFIG — paste your deployed Apps Script URL here ───────────────────────
 const APPS_SCRIPT_URL = "https://script.google.com/a/macros/homechef.com/s/AKfycbz9Tcwvn8lZm4BdCj4lVoyj9JepZYAYx6hfxCzB5p2mQ4jIVDc-Ok-hwYF0qbEd9Vw/exec";
+
+const COOK_PLAN_URLS = {
+  BP:  "https://docs.google.com/spreadsheets/d/1q2DSqATa8jRuszsnwAMzw2a4O4DagRUVqOwh7qLXIyk/edit",
+  SB:  "https://docs.google.com/spreadsheets/d/17EZHbEhFYUvwmlGXvk9BXSgWBJVGPnsuWFkMQDifTM0/edit",
+  SKY: "https://docs.google.com/spreadsheets/d/1CtkXL6eIpvoE-fhubZayr_WtbAGTEQ_NQghQTYkMhzI/edit",
+};
 
 // ─── INGREDIENT CACHE ────────────────────────────────────────────────────────
 let ingredientCache = {}; // { BP: [{name, ingId}], SB: [...], SKY: [...] }
@@ -512,8 +522,10 @@ function renderResults(data) {
   // MAP Plan button
   if (data.mapPlanUrl) {
     document.getElementById('mapBtn').href = data.mapPlanUrl;
-    document.getElementById('mapBtnWrap').classList.add('visible');
   }
+  // Cook Plan button — always link to this site's Cook Plan
+  document.getElementById('cookBtn').href = COOK_PLAN_URLS[currentSite] || '#';
+  document.getElementById('mapBtnWrap').classList.add('visible');
 
   if (!results.length) {
     document.getElementById('results').innerHTML = `
@@ -561,8 +573,8 @@ function cardHTML(m, today) {
     ? `<div class="card-rank">${m.rank}</div>`
     : `<div class="card-rank bad">✕</div>`;
 
-  // "Cooking today (check with chef)" — premap only
-  const todayTag = (cookingToday && !isDecanted)
+  // "Cooking today (check with chef)" — premap only, not on not_viable
+  const todayTag = (cookingToday && !isDecanted && !badCard)
     ? `<span class="today-tag">Cooking today (check with chef)</span>` : '';
 
   // Buffer = 0 warning — only for premap meals
